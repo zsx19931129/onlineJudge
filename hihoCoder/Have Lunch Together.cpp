@@ -1,8 +1,7 @@
-// bfs求符合条件的最短路，思路：首先找到一个solution，然后求solution的最短路，比较最优值，穷举
 // 一次从起点开始的bfs就可以求出从起点到所有可行点的最短路径
 
 #define MAXN 102
-#define INFINATE 10000
+#define INFINATE 0x0fffffff
 #include <iostream>
 #include <string>
 #include <queue>
@@ -22,7 +21,7 @@ struct bfsNode{
     bfsNode(int a, int b,int c):x(a),y(b),step(c){}
 };
 
-inline void input(){
+void input(){
     //在输入这里做一个优化，把不可能的情况，比如孤立的s直接在输入里排除
     cin>>n>>m;
     //在cafeMap周围加一圈墙，可以避免繁琐的边界判定，空间换时间
@@ -70,10 +69,17 @@ inline void input(){
             }
         }
     }
+    
+    for(int i=1;i<=n;i++){
+        for(int j=1;j<=m;j++){
+            //有一些虽然是.，但是可能广搜到不了，所以没有最短路赋值，会导致错误
+            minDis[i][j] = INFINATE;
+        }
+    }
 }
 
 //广度优先遍历整个迷宫，求出
-inline void bfs(){
+void bfs(){
     bool visited[MAXN][MAXN];
     for(int i=1;i<=n;i++){
         for(int j=1;j<=m;j++){
@@ -81,16 +87,18 @@ inline void bfs(){
         }
     }
     queue<bfsNode> myQueue;
+    visited[startX][startY] = true;         //这句一定要提前写，不然会导致重复放进队里
     myQueue.push(bfsNode(startX, startY, 0));
     while(!myQueue.empty()){
         bfsNode item = myQueue.front();
         myQueue.pop();
-        visited[item.x][item.y] = true;
+        //visited[item.x][item.y] = true;
         minDis[item.x][item.y] = item.step;
         for(int i=0;i<4;i++){
             int newX = item.x + offset[i][0];
             int newY = item.y + offset[i][1];
             if(cafeMap[newX][newY] == 0 && !visited[newX][newY]){
+                visited[newX][newY] = true;
                 myQueue.push(bfsNode(newX, newY, item.step + 1));
             }
         }
@@ -109,33 +117,27 @@ int getMinDis(int x,int y){
     return ret;
 }
 
-inline void solve(){
-    bool findSol = false;
+void solve(){
     for(int i=1;i<=n;i++){
         for(int j=1;j<=m;j++){
             if(cafeMap[i][j] == 1){
-                findSol = true;
                 //找到一个空位置，遍历上下左右，找到最短路和另一个位置
                 int s1 = getMinDis(i,j);
-                int s2 = INFINATE;			//由于经过剪枝，S周围一定有第二个S
                 for(int k=0;k<4;k++){
                     int newX = i + offset[k][0];
                     int newY = j + offset[k][1];
                     if(cafeMap[newX][newY] == 1){
-                        int tmp = getMinDis(newX, newY);
-                        if(tmp<s2){
-                            s2 = tmp;
+                        int s2 = getMinDis(newX, newY);
+                        if((s1 + s2) < res){
+                            res = s1+s2;
                         }
                     }
-                }
-                if(s1 + s2 < res){
-                    res = s1+s2;
                 }
             }
         }
     }
     //加上到位置上的两步
-    if(findSol){
+    if(res<INFINATE){
         cout<<res+2<<endl;
     }else{
         cout<<"Hi and Ho will not have lunch."<<endl;
